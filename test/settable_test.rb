@@ -32,6 +32,10 @@ class SettableBlockTest < Test::Unit::TestCase
     end
   end
   
+  def test_settables
+    assert_equal [:string, :numeric, :block, :combined, :tracking, :caching].sort, @config.__settables__.sort
+  end
+  
   def test_strings
     assert_equal 'hello world', @config.string
   end
@@ -132,6 +136,10 @@ class SettableRailsTest < Test::Unit::TestCase
         'example.com'
       end
     end
+  end
+  
+  def test_settables
+    assert_equal [:debug, :api_endpoint, :api_token].sort, @config.__settables__.sort
   end
   
   def test_in_environment_helper
