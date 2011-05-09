@@ -28,6 +28,9 @@ to use this in your initializer, script, etc. just open it up and use set/enable
       set :api_endpoint, "http://example.com/api/#{api_token}"
     end
     
+    puts config.debug?
+    puts config.api_endpoint
+    
 or if you wanted to use it with rails    
     
     class Configuration
@@ -65,3 +68,7 @@ and use the environment helpers
         "http://example.com/api/#{api_token}"
       end
     end
+    
+    puts config.debug?
+    puts config.caching?
+    puts config.api_endpoint
