@@ -55,6 +55,10 @@ class SettableBlockTest < Test::Unit::TestCase
   def test_disable
     assert !@config.caching
   end
+  
+  def test_question_marks
+    assert @config.combined? == true
+  end
 end
 
 # test individual setting config
@@ -102,6 +106,11 @@ class SettableExternalTest < Test::Unit::TestCase
     @config.set :hello, 'hello'
     @config.set :combined, "#{@config.hello}-world"
     assert_equal 'hello-world', @config.combined
+  end
+  
+  def test_question_marks
+    @config.set :hello, 'world'
+    assert @config.hello? == true
   end
 end
 
@@ -163,5 +172,9 @@ class SettableRailsTest < Test::Unit::TestCase
   def test_multiple_environments_in_other
     Rails.env = :production
     assert_equal 'example.com', @config.api_endpoint
+  end
+  
+  def test_question_marks
+    assert @config.api_endpoint? == true
   end
 end
