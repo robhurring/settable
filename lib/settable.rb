@@ -1,9 +1,20 @@
 module Settable
   module Rails
-    # support the basic rails environments
-    %w{development production test}.each do |env|
+    DEFAULT_ENVIRONMENTS = [:development, :production, :test]
+    
+    # allow us to add custom environment helpers
+    def define_environments(*envs)
+      envs.each do |env|
+        define_metaclass_method(:"in_#{env}"){ |&block| in_environment(env.to_sym, &block) }
+        define_metaclass_method(:"in_#{env}?"){ in_environment?(env.to_sym) }      
+      end
+    end
+    alias_method :define_environment, :define_environments
+    
+    # create our default environments
+    DEFAULT_ENVIRONMENTS.each do |env|
       define_method(:"in_#{env}"){ |&block| in_environment(env.to_sym, &block) }
-      define_method(:"in_#{env}?"){ in_environment?(env.to_sym) }
+      define_method(:"in_#{env}?"){ in_environment?(env.to_sym) }      
     end
     
     # helper method that will call the block if the Rails.env matches the given environments

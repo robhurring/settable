@@ -42,6 +42,10 @@ or if you wanted to use it with rails
 and use the environment helpers
 
     config = Configuration.new do
+      # add some custom environments from our app
+      define_environments :blah, :qa
+
+      set :something, in_blah?
       set :debug, in_environments?(:development, :test)
   
       if in_production?

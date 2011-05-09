@@ -3,19 +3,22 @@ require 'settable'
 
 # stub out our rails
 module Rails
-  def self.env; :production end
+  def self.env; :blah end
 end
 
 class Configuration
   include Settable
   include Settable::Rails
-  
+    
   def initialize(&block)
     instance_eval(&block) if block_given?
   end
 end
 
-config = Configuration.new do
+@config = Configuration.new do
+  define_environments :blah, :qa
+  
+  set :something, in_blah?
   set :debug, in_environments?(:development, :test)
   
   if in_production?
@@ -37,12 +40,12 @@ config = Configuration.new do
 end
 
 # external stuffs
-puts config.inspect
+puts @config.inspect
 
 puts '-' * 80
 
-puts config.tracking?
-puts config.caching?
-puts config.api_token
-puts config.api_endpoint
-puts config.debug?
+puts @config.tracking?
+puts @config.caching?
+puts @config.api_token
+puts @config.api_endpoint
+puts @config.debug?
