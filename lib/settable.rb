@@ -1,4 +1,6 @@
 module Settable
+  VERSION = "1.0"
+  
   module Rails
     DEFAULT_ENVIRONMENTS = [:development, :production, :test]
     
