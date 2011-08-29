@@ -55,6 +55,10 @@ module Settable
       set key, Proc.new{value}
     end
   end
+  
+  def namespace(name, &block)
+    set name, Namespace.create(self, &block)
+  end
 
   def enable(*keys)
     keys.each{ |key| set key, true }
@@ -62,5 +66,22 @@ module Settable
   
   def disable(*keys)
     keys.each{ |key| set key, false }
+  end
+  
+  class Namespace
+    def self.create(base, &block)
+      include Settable
+      klass = new
+      
+      # good lord this is hack. but we need to re-define the custom environments in our
+      # namespaces 
+      if base.class.ancestors.include?(Settable::Rails)
+        include Settable::Rails
+        klass.instance_eval{ define_environments *CUSTOM_ENVIRONMENTS }
+      end
+      
+      klass.instance_eval(&block)
+      klass
+    end
   end
 end
