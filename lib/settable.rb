@@ -3,12 +3,14 @@ module Settable
   
   module Rails
     DEFAULT_ENVIRONMENTS = [:development, :production, :test]
+    CUSTOM_ENVIRONMENTS = []
     
     # allow us to add custom environment helpers
     def define_environments(*envs)
       envs.each do |env|
+        CUSTOM_ENVIRONMENTS << env
         define_metaclass_method(:"in_#{env}"){ |&block| in_environment(env.to_sym, &block) }
-        define_metaclass_method(:"in_#{env}?"){ in_environment?(env.to_sym) }      
+        define_metaclass_method(:"in_#{env}?"){ in_environment?(env.to_sym) }
       end
     end
     alias_method :define_environment, :define_environments
