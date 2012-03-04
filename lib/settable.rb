@@ -9,7 +9,7 @@ module Settable
     def make_settable
       mc = (class << self; self; end)
       mc.__send__(:include, Settable)
-      # mc.__send__(:remove_method, :namespace)
+      mc.__send__(:include, Settable::Rails) if self.ancestors.include?(Settable::Rails)
     end
   end
 
@@ -81,14 +81,14 @@ module Settable
   end
 
   class Namespace
-    include Settable
-
     def self.create(base, &block)
       klass = new
-      # good lord this is hack. but we need to re-define the custom environments in our
-      # namespaces
-      if base.class.ancestors.include?(Settable::Rails)
-        include Settable::Rails
+      klass.class.__send__ :include, ::Settable
+
+      # good lord this is hack. but we need to re-define the custom environments in our namespaces
+      _base = base.kind_of?(Class) ? base : base.class
+      if _base.ancestors.include?(::Settable::Rails)
+        klass.class.__send__ :include, ::Settable::Rails
         klass.instance_eval{ define_environments *CUSTOM_ENVIRONMENTS }
       end
 
