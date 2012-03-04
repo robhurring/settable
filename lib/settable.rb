@@ -1,10 +1,22 @@
 module Settable
   VERSION = "1.1"
-  
+
+  def self.included(base)
+    base.extend ClassMethods
+  end
+
+  module ClassMethods
+    def make_settable
+      mc = (class << self; self; end)
+      mc.__send__(:include, Settable)
+      # mc.__send__(:remove_method, :namespace)
+    end
+  end
+
   module Rails
     DEFAULT_ENVIRONMENTS = [:development, :production, :test]
     CUSTOM_ENVIRONMENTS = []
-    
+
     # allow us to add custom environment helpers
     def define_environments(*envs)
       envs.each do |env|
@@ -14,35 +26,35 @@ module Settable
       end
     end
     alias_method :define_environment, :define_environments
-    
+
     # create our default environments
     DEFAULT_ENVIRONMENTS.each do |env|
       define_method(:"in_#{env}"){ |&block| in_environment(env.to_sym, &block) }
-      define_method(:"in_#{env}?"){ in_environment?(env.to_sym) }      
+      define_method(:"in_#{env}?"){ in_environment?(env.to_sym) }
     end
-    
+
     # helper method that will call the block if the Rails.env matches the given environments
     def in_environments(*envs, &block)
       block.call if envs.include?(::Rails.env.to_sym)
     end
     alias_method :in_environment, :in_environments
-    
+
     # tests if we're in the given environment(s)
     def in_environments?(*envs)
       envs.include?(::Rails.env.to_sym)
     end
     alias_method :in_environment?, :in_environments?
   end
-  
+
   def define_metaclass_method(method, &block)
     (class << self; self; end).send :define_method, method, &block
   end
-  
-  # list 
+
+  # list
   def __settables__
     @__settables__ ||= []
   end
-  
+
   # modified from sinatra
   def set(key, value=nil, &block)
     raise ArgumentError, "You must specify either a block or value" if block_given? && !value.nil?
@@ -55,7 +67,7 @@ module Settable
       set key, Proc.new{value}
     end
   end
-  
+
   def namespace(name, &block)
     set name, Namespace.create(self, &block)
   end
@@ -63,23 +75,23 @@ module Settable
   def enable(*keys)
     keys.each{ |key| set key, true }
   end
-  
+
   def disable(*keys)
     keys.each{ |key| set key, false }
   end
-  
+
   class Namespace
+    include Settable
+
     def self.create(base, &block)
-      include Settable
       klass = new
-      
       # good lord this is hack. but we need to re-define the custom environments in our
-      # namespaces 
+      # namespaces
       if base.class.ancestors.include?(Settable::Rails)
         include Settable::Rails
         klass.instance_eval{ define_environments *CUSTOM_ENVIRONMENTS }
       end
-      
+
       klass.instance_eval(&block)
       klass
     end
