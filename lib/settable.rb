@@ -1,5 +1,5 @@
 module Settable
-  VERSION = "1.1"
+  VERSION = "2.0"
 
   def self.included(base)
     base.extend ClassMethods
