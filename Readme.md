@@ -7,68 +7,65 @@ To create the configuration wrapper, its as simple as:
 
     class Configuration
       include Settable
+      make_settable
 
-      def initialize(&block)
-        instance_eval(&block) if block_given?
+      enable :debugging
+      set :logfile, 'my/logfile.log'
+
+      namespace :api do
+        set :key, 'abcdefg'
+        set :secret, '123567678'
       end
     end
 
-to use this in your initializer, script, etc. just open it up and use set/enable/etc    
+To use you can call:
 
-    # using it without the rails helpers
-    config = Configuration.new do
-      set :environment, 'development'
-      enable :debug
-      
-      set :api_token do
-        return 'PRODTOKEN' if environment == 'production'
-        'DEVTOKEN'
-      end
+    Configuration.debugging?    # => true
+    Configuration.api.key       # => "abcdefg"
 
-      set :api_endpoint, "http://example.com/api/#{api_token}"
-    end
-    
-    puts config.debug?
-    puts config.api_endpoint
-    
-or if you wanted to use it with rails    
-    
-    class Configuration
+Usage with rails is also supported, which makes app configuration between environments a cinch.
+
+    class RailsConfiguration
       include Settable
       include Settable::Rails
+      make_settable
+
+      enable :logging
+
+      set :error_reporting, in_production?
+
+      namespace :seo do
+        # true if in production or certification
+        set :tracking, in_environments?(:production, :certification)
+      end
+
+      namespace :api do
+        set :token do
+          in_production{ return 'prodtoken' }
+          'devtoken'
+        end
+      end
+    end
+
+    RailsConfiguration.logging?           # => true
+    RailsConfiguration.error_reporting    # => true (if in prodtoken)
+    RailsConfiguration.api.token          # => 'prodtoken' (if in production, else 'devtoken')
+
+Note: custom environments don't work when using settables at the class level right now. There is an alternate
+way of using this lib.
+
+
+    # Use instances rather than at the class leave out the 'make_settable' call
+    class Configuration
+      include Settable
 
       def initialize(&block)
-        instance_eval(&block) if block_given?
+        instance_eval &block
       end
     end
-      
-and use the environment helpers
 
-    config = Configuration.new do
-      # add some custom environments from our app
-      define_environments :blah, :qa
-
-      set :something, in_blah?
-      set :debug, in_environments?(:development, :test)
-  
-      if in_production?
-        enable :tracking, :caching
-      else
-        disable :tracking, :caching
-      end
-  
-      set :api_token do
-        in_production { return 'PRODTOKEN' }
-        in_development{ return 'DEVTOKEN' }
-        'OTHERTOKEN'
-      end
-  
-      set :api_endpoint do
-        in_environments(:development, :test){ return "http://sandbox.example.com/api/#{api_token}" }
-        "http://example.com/api/#{api_token}"
-      end
+    # in an initializer or wherever
+    $config = Configuration.new do
+      set :key, 'value'
     end
-    
-    puts config.debug?
-    puts config.caching?
-    puts config.api_endpoint
+
