@@ -52,12 +52,12 @@ Usage with rails is also supported, which makes app configuration between enviro
     RailsConfiguration.api.token          # => 'prodtoken' (if in production, else 'devtoken')
 
 Note: custom environments don't work when using settables at the class level right now. There is an alternate
-way of using this lib.
-
+way of using this lib if you need multiple, separate, configs in your app
 
     # Use instances rather than at the class leave out the 'make_settable' call
     class Configuration
       include Settable
+      include Settable::Rails
 
       def initialize(&block)
         instance_eval &block
@@ -65,7 +65,10 @@ way of using this lib.
     end
 
     # in an initializer or wherever
-    $config = Configuration.new do
+    $app_config = Configuration.new do
       set :key, 'value'
     end
 
+    $seo_config = Configuration.new do
+      enable :tracking
+    end
