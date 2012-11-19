@@ -106,7 +106,7 @@ class MyApp
   end
 
   # creates a class and instance method +config+ that holds all settings
-  simple_config :config do
+  settable :config do
     # use our custom env tester for all +environment+ calls
     use_environment EnvironmentTester
 
