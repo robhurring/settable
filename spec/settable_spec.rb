@@ -193,7 +193,7 @@ describe Settable::Environment::Rails do
 end
 
 describe Settable::DSL do
-  class MyApp
+  class TestConfig1
     include Settable
 
     settable :config do
@@ -206,14 +206,37 @@ describe Settable::DSL do
   end
 
   it 'instances methods should have access' do
-    MyApp.new.something.should eq 'world'
+    TestConfig1.new.something.should eq 'world'
   end
 
   it 'class should have access' do
-    MyApp.config.hello.should eq 'world'
+    TestConfig1.config.hello.should eq 'world'
   end
 
   it 'instnace should have generated method' do
-    MyApp.new.config.should be_kind_of(Settable::Namespace)
+    TestConfig1.new.config.should be_kind_of(Settable::Namespace)
+  end
+end
+
+describe 'Interpolating config' do
+  class TestConfig2
+    include Settable
+
+    settable :config do
+      set :hello, "hello"
+      set :hello_world, "#{hello} world!"
+
+      set :hello_world_block do
+        "#{root.hello} world!"
+      end
+    end
+  end
+
+  it 'should interpolate values from config' do
+    TestConfig2.config.hello_world.should eq 'hello world!'
+  end
+
+  it 'should interpolate values from config (within a block)' do
+    TestConfig2.config.hello_world_block.should eq 'hello world!'
   end
 end

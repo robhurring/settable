@@ -27,9 +27,10 @@ module Settable
   end
 
   class SettingBlock
-    def initialize(environment = nil, &block)
+    def initialize(namespace, &block)
       @block = lambda &block
-      @environment = environment
+      @namespace = namespace
+      @environment = namespace.environment
     end
 
     def call
@@ -37,6 +38,10 @@ module Settable
     end
 
   private
+
+    def root
+      @namespace.root
+    end
 
     def environment(name_or_names, value = nil, &block)
       return unless @environment
@@ -51,7 +56,7 @@ module Settable
   class Setting
     def initialize(namespace, key, value, &block)
       @key = key
-      value = SettingBlock.new(namespace.environment, &block) if block_given?
+      value = SettingBlock.new(namespace, &block) if block_given?
       @value = value
     end
 
@@ -69,11 +74,12 @@ module Settable
   end
 
   class Namespace
-    attr_reader :environment
+    attr_reader :name, :parent, :environment
 
-    def initialize(name, &block)
+    def initialize(name, parent = nil, &block)
       @name = name
       @environment = nil
+      @parent = parent
       instance_eval &block
     end
 
@@ -99,7 +105,7 @@ module Settable
 
     def namespace(name, &block)
       define_metaclass_method(name.to_sym) do
-        namespace = Namespace.new(name, &block)
+        namespace = Namespace.new(name, self, &block)
         namespace.use_environment(@environment)
         namespace
       end
@@ -107,6 +113,16 @@ module Settable
 
     def environment_matches?(*values)
       Array(values).any?{ |v| @environment.matches?(v) }
+    end
+
+    # bit of a hack to allow settings to reference other settings. will return the
+    # toplevel namespace
+    def root
+      @root ||= begin
+        root = self
+        root = root.parent until root.parent.nil?
+        root
+      end
     end
 
   private
