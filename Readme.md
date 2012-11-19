@@ -14,15 +14,11 @@ it was refactored to be cleaner and a little more flexible.
 
 Add this line to your application's Gemfile:
 
-    gem 'settable', '~> 3'
+    gem 'settable', git: 'https://github.com/robhurring/settable'
 
 And then execute:
 
     $ bundle
-
-Or install it yourself as:
-
-    $ gem install settable
 
 ## Usage
 
