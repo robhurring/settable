@@ -1,74 +1,140 @@
-About
-===
+# Settable 3.0
 
-Simple library to make configuration files dead simple. It uses "set, enable, disable" just like capistrano and sinatra. It also has some rails helpers to change settings based off environments.
+An alternative to using rails' environment files or YAML for application config. Settable was created out of the frustration of
+missing a config setting in an environment file, or constantly duplicating YAML keys for different environments. Settable helps
+make your config "safe" by always having a default value, and its built using Ruby so it is highly customizable and powerful.
 
-To create the configuration wrapper, its as simple as:
+Check the Usage for some details on how it can be used.
 
-    class Configuration
-      include Settable
-      make_settable
+**Note:** This is a complete re-write from settable v2.0 and not backwards compatible. The old code was clunky and confusing, so
+it was refactored to be cleaner and a little more flexible.
 
-      enable :debugging
-      set :logfile, 'my/logfile.log'
 
-      namespace :api do
-        set :key, 'abcdefg'
-        set :secret, '123567678'
+## Installation
+
+Add this line to your application's Gemfile:
+
+    gem 'settable'
+
+And then execute:
+
+    $ bundle
+
+Or install it yourself as:
+
+    $ gem install settable
+
+## Usage
+
+### Basic Usage
+
+```ruby
+$config = Settable.configure do
+  # basic set, similar to capistrano and sinatra
+  set :username, 'user'
+  set :password, 's3kr1t'
+
+  # namespace support to keep config clean
+  namespace :tracking do
+    set :enabled, true
+  end
+
+  set :block do
+    'blocks are allowed too!'
+  end
+end
+
+if params[:user] == $config.username && params[:password] == $config.password
+  ...
+end
+
+# all settings have a "presence" method, just add a "?" to check if it has been set
+if $config.tracking.enabled?
+  ...
+end
+```
+
+### Rails Integration
+
+```ruby
+# config/initializers/app_config.rb
+$config = Settable.configure do
+  # this enables the +environment+ helpers below, so we can set values in specific
+  # environments only. (environment testers can be swapped out - see the advanced example)
+  use_environment :rails
+
+  set :username do
+    # checks Rails.env and will return 'superadmin' when in production
+    environment :production, 'superadmin'
+
+    # defaults back to 'devuser' if environment doesn't match
+    'devuser'
+  end
+
+  set :password do
+    environment :production, 's3kr1t'
+
+    'defaultpassword'
+  end
+
+  set :tracking do
+    # check if we're in production _or_ staging
+    environment [:production, :staging], true
+    false
+  end
+end
+
+# some_controller.rb
+http_basic_authenticate_with name: $config.username, password: $config.password
+```
+
+### Advanced Integration
+
+To use a custom class/namespace for your configuration you can do the following:
+
+```ruby
+class MyApp
+  # include the Settable DSL
+  include Settable
+
+  # create a custom environment tester, any object that respond to #matches?(value) can be used
+  # as an environment tester. This is in the core code when using "use_environment :env"
+  module EnvironmentTester
+    def self.matches?(environment)
+      ::ENV.has_key?(environment.to_s.upcase)
+    end
+  end
+
+  # creates a class and instance method +config+ that holds all settings
+  simple_config :config do
+    # use our custom env tester for all +environment+ calls
+    use_environment EnvironmentTester
+
+    set :redis_uri do
+      # check our ENV for the REDIS_TO_GO_URL key
+      environment :REDIS_TO_GO_URL do
+        ENV['REDIS_TO_GO_URL']
       end
+
+      # default to localhost if not found
+      'localhost:6379'
     end
+  end
 
-To use you can call:
+  def redis
+    Redis.new(config.redis_uri)
+  end
+end
 
-    Configuration.debugging?    # => true
-    Configuration.api.key       # => "abcdefg"
+$app = MyApp.new
+$redis = $app.redis
+# you can also reach the redis_uri at MyApp.config.redis_uri
+```
 
-Usage with rails is also supported, which makes app configuration between environments a cinch.
+## Contributing
 
-    class RailsConfiguration
-      include Settable
-      include Settable::Rails
-      make_settable
-
-      enable :logging
-
-      set :error_reporting, in_production?
-
-      namespace :seo do
-        # true if in production or certification
-        set :tracking, in_environments?(:production, :certification)
-      end
-
-      namespace :api do
-        set :token do
-          in_production{ return 'prodtoken' }
-          'devtoken'
-        end
-      end
-    end
-
-    RailsConfiguration.logging?           # => true
-    RailsConfiguration.error_reporting    # => true (if in prodtoken)
-    RailsConfiguration.api.token          # => 'prodtoken' (if in production, else 'devtoken')
-
-Note: custom environments don't work when using settables at the class level right now. There is an alternate
-way of using this lib if you need multiple, separate, configs in your app
-
-    # To use instances rather than classes leave out the 'make_settable' call
-    class Configuration
-      include Settable
-      include Settable::Rails
-
-      def initialize(&block)
-        instance_eval &block
-      end
-    end
-
-    # in an initializer or wherever
-    $app_config = Configuration.new do
-      set :key, 'value'
-    end
-
-    $seo_config = Configuration.new do
-      enable :tracking
-    end
+1. Fork it
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create new Pull Request

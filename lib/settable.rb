@@ -1,99 +1,114 @@
+# Settable
+# Settings module that can be easily included into classes that store
+# your applications configuration
 module Settable
-  VERSION = "2.0"
+  VERSION = '3.0'
+  ROOT_NAMESPACE = :__settable__
+
+  module DSL
+    def settable(name, &block)
+      metaclass = (class << self; self; end)
+      metaclass.__send__(:define_method, name){ Namespace.new(name, &block) }
+      self.__send__(:define_method, name){ self.class.__send__(name) }
+    end
+  end
 
   def self.included(base)
-    base.extend ClassMethods
+    base.extend DSL
   end
 
-  module ClassMethods
-    def make_settable
-      mc = (class << self; self; end)
-      mc.__send__(:include, Settable)
-      mc.__send__(:include, Settable::Rails) if self.ancestors.include?(Settable::Rails)
+  def self.configure(&block)
+    Namespace.new(ROOT_NAMESPACE, &block)
+  end
+
+  module Environment
+    autoload :Rails, 'settable/environment/rails'
+    autoload :Env, 'settable/environment/env'
+  end
+
+  class SettingBlock
+    def initialize(environment = nil, &block)
+      @block = lambda &block
+      @environment = environment
     end
-  end
 
-  module Rails
-    DEFAULT_ENVIRONMENTS = [:development, :production, :test]
-    CUSTOM_ENVIRONMENTS = []
+    def call
+      catch(:done){ instance_eval &@block }
+    end
 
-    # allow us to add custom environment helpers
-    def define_environments(*envs)
-      envs.each do |env|
-        CUSTOM_ENVIRONMENTS << env
-        define_metaclass_method(:"in_#{env}"){ |&block| in_environment(env.to_sym, &block) }
-        define_metaclass_method(:"in_#{env}?"){ in_environment?(env.to_sym) }
+  private
+
+    def environment(name_or_names, value = nil, &block)
+      return unless @environment
+
+      if Array(name_or_names).any?{ |n| @environment.matches?(n) }
+        return_value = block_given? ? block.call : value
+        throw :done, return_value
       end
     end
-    alias_method :define_environment, :define_environments
+  end
 
-    # create our default environments
-    DEFAULT_ENVIRONMENTS.each do |env|
-      define_method(:"in_#{env}"){ |&block| in_environment(env.to_sym, &block) }
-      define_method(:"in_#{env}?"){ in_environment?(env.to_sym) }
+  class Setting
+    def initialize(namespace, key, value, &block)
+      @key = key
+      value = SettingBlock.new(namespace.environment, &block) if block_given?
+      @value = value
     end
 
-    # helper method that will call the block if the Rails.env matches the given environments
-    def in_environments(*envs, &block)
-      block.call if envs.include?(::Rails.env.to_sym)
+    def value
+      if @value.respond_to?(:call)
+        @value.call
+      else
+        @value
+      end
     end
-    alias_method :in_environment, :in_environments
 
-    # tests if we're in the given environment(s)
-    def in_environments?(*envs)
-      envs.include?(::Rails.env.to_sym)
+    def present?
+      !!value
     end
-    alias_method :in_environment?, :in_environments?
-  end
-
-  def define_metaclass_method(method, &block)
-    (class << self; self; end).send :define_method, method, &block
-  end
-
-  # list
-  def __settables__
-    @__settables__ ||= []
-  end
-
-  # modified from sinatra
-  def set(key, value=nil, &block)
-    raise ArgumentError, "You must specify either a block or value" if block_given? && !value.nil?
-    value = block if block_given?
-    if value.is_a?(Proc)
-      __settables__ << key
-      define_metaclass_method key, &value
-      define_metaclass_method(:"#{key}?"){ !!__send__(key) }
-    else
-      set key, Proc.new{value}
-    end
-  end
-
-  def namespace(name, &block)
-    set name, Namespace.create(self, &block)
-  end
-
-  def enable(*keys)
-    keys.each{ |key| set key, true }
-  end
-
-  def disable(*keys)
-    keys.each{ |key| set key, false }
   end
 
   class Namespace
-    def self.create(base, &block)
-      klass = new
-      klass.class.__send__ :include, ::Settable
+    attr_reader :environment
 
-      # good lord this is hack. but we need to re-define the custom environments in our namespaces
-      _base = base.kind_of?(Class) ? base : base.class
-      if _base.ancestors.include?(::Settable::Rails)
-        klass.class.__send__ :include, ::Settable::Rails
-        klass.instance_eval{ define_environments *CUSTOM_ENVIRONMENTS }
+    def initialize(name, &block)
+      @name = name
+      @environment = nil
+      instance_eval &block
+    end
+
+    def use_environment(klass = nil)
+      return if klass.nil?
+
+      if klass.is_a?(Symbol)
+        klass = Object.module_eval("Settable::Environment::#{klass.to_s.capitalize}", __FILE__, __LINE__)
+      else
+        unless klass.is_a?(Object) && klass.respond_to?(:matches?)
+          raise "#{klass} must respond to #matches?(value) to be a valid environment!"
+        end
       end
 
-      klass.instance_eval(&block)
-      klass
+      @environment = klass
+    end
+
+    def set(name, value = nil, &block)
+      setting =  Setting.new(self, name, value, &block)
+      define_metaclass_method(name.to_sym){ setting.value }
+      define_metaclass_method(:"#{name}?"){ setting.present? }
+    end
+
+    def namespace(name, &block)
+      define_metaclass_method(name.to_sym) do
+        namespace = Namespace.new(name, &block)
+        namespace.use_environment(@environment)
+        namespace
+      end
+    end
+
+  private
+
+    def define_metaclass_method(method, &block)
+      (class << self; self; end).__send__ :define_method, method, &block
     end
   end
 end

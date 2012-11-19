@@ -1,23 +1,21 @@
 # -*- encoding: utf-8 -*-
-$:.push File.expand_path("../lib", __FILE__)
-require "settable"
+lib = File.expand_path('../lib', __FILE__)
+$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+require 'settable'
 
-Gem::Specification.new do |s|
-  s.name        = "settable"
-  s.version     = Settable::VERSION
-  s.platform    = Gem::Platform::RUBY
-  s.authors     = ["Rob Hurring"]
-  s.email       = ["robhurring@gmail.com"]
-  s.homepage    = ""
-  s.summary     = %q{Small include to make config files better}
-  s.description = %q{Small include to make config files better}
+Gem::Specification.new do |gem|
+  gem.name          = 'settable'
+  gem.version       = Settable::VERSION
+  gem.authors       = ['Rob Hurring']
+  gem.email         = ['robhurring@gmail.com']
+  gem.summary       = %q{Small include to make config files better}
+  gem.description   = %q{Small include to make config files better}
+  gem.homepage      = 'https://github.com/robhurring/settable'
 
-  s.rubyforge_project = "settable"
+  gem.files         = `git ls-files`.split($/)
+  gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
+  gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
+  gem.require_paths = ["lib"]
 
-  s.files         = `git ls-files`.split("\n")
-  s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
-  s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
-  s.require_paths = ["lib"]
-
-  s.add_development_dependency 'rspec'
+  gem.add_development_dependency 'rspec'
 end
