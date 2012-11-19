@@ -105,6 +105,10 @@ module Settable
       end
     end
 
+    def environment_matches?(*values)
+      Array(values).any?{ |v| @environment.matches?(v) }
+    end
+
   private
 
     def define_metaclass_method(method, &block)

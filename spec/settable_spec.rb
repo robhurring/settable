@@ -112,7 +112,7 @@ describe Settable::Environment::Env do
 end
 
 describe Settable::Environment::Rails do
-  module Rails
+  module ::Rails
     def self.env=(env)
       @env = env
     end
@@ -135,6 +135,26 @@ describe Settable::Environment::Rails do
 
         'default'
       end
+    end
+  end
+
+  describe '#environment_matches?' do
+    it 'should return false when not set' do
+      subject.instance_eval do
+        set :test, environment_matches?(:qa, :staging)
+      end
+
+      subject.test.should be_false
+    end
+
+    it 'should return true when set' do
+      Rails.env = :qa
+
+      subject.instance_eval do
+        set :test, environment_matches?(:qa, :staging)
+      end
+
+      subject.test.should be_true
     end
   end
 
