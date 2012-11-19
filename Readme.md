@@ -14,7 +14,7 @@ it was refactored to be cleaner and a little more flexible.
 
 Add this line to your application's Gemfile:
 
-    gem 'settable'
+    gem 'settable', '~> 3'
 
 And then execute:
 
