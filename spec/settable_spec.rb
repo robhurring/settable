@@ -56,7 +56,7 @@ end
 
 describe Settable::Environment do
   module EnvTester
-    def self.matches?(environment)
+    def self.call(environment)
       environment.to_sym == :test
     end
   end

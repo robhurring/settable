@@ -46,7 +46,7 @@ module Settable
     def environment(name_or_names, value = nil, &block)
       return unless @environment
 
-      if Array(name_or_names).any?{ |n| @environment.matches?(n) }
+      if Array(name_or_names).any?{ |n| @environment.call(n) }
         return_value = block_given? ? block.call : value
         throw :done, return_value
       end
@@ -83,14 +83,18 @@ module Settable
       instance_eval &block
     end
 
-    def use_environment(klass = nil)
-      return if klass.nil?
-
-      if klass.is_a?(Symbol)
+    def use_environment(klass = nil, &block)
+      if klass.nil?
+        if block_given?
+          klass = block
+        else
+          return
+        end
+      elsif klass.is_a?(Symbol)
         klass = Object.module_eval("Settable::Environment::#{klass.to_s.capitalize}", __FILE__, __LINE__)
       else
-        unless klass.is_a?(Object) && klass.respond_to?(:matches?)
-          raise "#{klass} must respond to #matches?(value) to be a valid environment!"
+        unless klass.is_a?(Object) && klass.respond_to?(:call)
+          raise "#{klass} must respond to #call(value) to be a valid environment!"
         end
       end
 
@@ -112,7 +116,7 @@ module Settable
     end
 
     def environment_matches?(*values)
-      Array(values).any?{ |v| @environment.matches?(v) }
+      Array(values).any?{ |v| @environment.call(v) }
     end
 
     # bit of a hack to allow settings to reference other settings. will return the
