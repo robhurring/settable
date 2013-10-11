@@ -1,5 +1,7 @@
 # Settable 3.0
 
+[![Build Status](https://drone.io/github.com/robhurring/settable/status.png)](https://drone.io/github.com/robhurring/settable/latest)
+
 An alternative to using rails' environment files or YAML for application config. Settable was created out of the frustration of
 missing a config setting in an environment file, or constantly duplicating YAML keys for different environments. Settable helps
 make your config "safe" by always having a default value, and its built using Ruby so it is highly customizable and powerful.
@@ -8,7 +10,6 @@ Check the Usage for some details on how it can be used.
 
 **Note:** This is a complete re-write from settable v2.0 and not backwards compatible. The old code was clunky and confusing, so
 it was refactored to be cleaner and a little more flexible.
-
 
 ## Installation
 
