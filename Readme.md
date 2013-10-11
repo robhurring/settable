@@ -93,10 +93,10 @@ class MyApp
   # include the Settable DSL
   include Settable
 
-  # create a custom environment tester, any object that respond to #matches?(value) can be used
+  # create a custom environment tester, any object that respond to #call(value) can be used
   # as an environment tester. This is in the core code when using "use_environment :env"
   module EnvironmentTester
-    def self.matches?(environment)
+    def self.call(environment)
       ::ENV.has_key?(environment.to_s.upcase)
     end
   end
