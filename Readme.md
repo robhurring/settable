@@ -1,5 +1,7 @@
 # Settable 3.0
 
+[![Build Status](https://travis-ci.org/robhurring/settable.png?branch=master)](https://travis-ci.org/robhurring/settable)
+
 An alternative to using rails' environment files or YAML for application config. Settable was created out of the frustration of
 missing a config setting in an environment file, or constantly duplicating YAML keys for different environments. Settable helps
 make your config "safe" by always having a default value, and its built using Ruby so it is highly customizable and powerful.
