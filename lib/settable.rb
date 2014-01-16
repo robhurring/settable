@@ -34,7 +34,9 @@ module Settable
     end
 
     def call
-      catch(:done){ instance_eval &@block }
+      @__env_return_value__ = nil # avoid using throw/catch
+      default_return_value = instance_eval &@block
+      @__env_return_value__ || default_return_value
     end
 
   private
@@ -44,11 +46,12 @@ module Settable
     end
 
     def environment(name_or_names, value = nil, &block)
+      return @__env_return_value__ if @__env_return_value__
       return unless @environment
 
       if Array(name_or_names).any?{ |n| @environment.call(n) }
-        return_value = block_given? ? block.call : value
-        throw :done, return_value
+        # store this and cache it so we can return it
+        @__env_return_value__ = block_given? ? block.call : value
       end
     end
   end
