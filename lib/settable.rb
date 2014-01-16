@@ -2,7 +2,7 @@
 # Settings module that can be easily included into classes that store
 # your applications configuration
 module Settable
-  VERSION = '3.0'
+  VERSION = '3.0.1'
   ROOT_NAMESPACE = :__settable__
 
   module DSL
@@ -81,7 +81,7 @@ module Settable
 
     def initialize(name, parent = nil, &block)
       @name = name
-      @environment = nil
+      @environment = parent ? parent.environment : nil
       @parent = parent
       instance_eval &block
     end
@@ -105,7 +105,7 @@ module Settable
     end
 
     def set(name, value = nil, &block)
-      setting =  Setting.new(self, name, value, &block)
+      setting = Setting.new(self, name, value, &block)
       define_metaclass_method(name.to_sym){ setting.value }
       define_metaclass_method(:"#{name}?"){ setting.present? }
     end
@@ -113,7 +113,6 @@ module Settable
     def namespace(name, &block)
       define_metaclass_method(name.to_sym) do
         namespace = Namespace.new(name, self, &block)
-        namespace.use_environment(@environment)
         namespace
       end
     end

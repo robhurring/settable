@@ -135,6 +135,18 @@ describe Settable::Environment::Rails do
 
         'default'
       end
+
+      namespace :segment do
+        set :key do
+          environment [:qa, :staging], 'qa_or_staging'
+          environment :development, 'development'
+          environment :production, 'production'
+          environment :test, 'test'
+          environment(:block){ 'block' }
+
+          'default'
+        end
+      end
     end
   end
 
@@ -161,34 +173,41 @@ describe Settable::Environment::Rails do
   it 'should match arrays' do
     Rails.env = :qa
     subject.key.should eq 'qa_or_staging'
+    subject.segment.key.should eq 'qa_or_staging'
 
     Rails.env = :staging
     subject.key.should eq 'qa_or_staging'
+    subject.segment.key.should eq 'qa_or_staging'
   end
 
   it 'should match development' do
     Rails.env = :development
     subject.key.should eq 'development'
+    subject.segment.key.should eq 'development'
   end
 
   it 'should match production' do
     Rails.env = :production
     subject.key.should eq 'production'
+    subject.segment.key.should eq 'production'
   end
 
   it 'should match test' do
     Rails.env = :test
     subject.key.should eq 'test'
+    subject.segment.key.should eq 'test'
   end
 
   it 'should not match bad environments' do
     Rails.env = :unknown_bad_environment
     subject.key.should eq 'default'
+    subject.segment.key.should eq 'default'
   end
 
   it 'should handle blocks' do
     Rails.env = :block
     subject.key.should eq 'block'
+    subject.segment.key.should eq 'block'
   end
 end
 
