@@ -29,7 +29,7 @@
 #   # => true
 #
 module Settable
-  VERSION = '3.0.1'
+  VERSION = '3.0.2'
 
   # name of the top-level namespace when none is provided
   ROOT_NAMESPACE = :__settable__
