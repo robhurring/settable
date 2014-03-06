@@ -133,7 +133,12 @@ module Settable
     def call
       @__env_return_value__ = nil # avoid using throw/catch
       default_return_value = instance_eval &@block
-      @__env_return_value__ || default_return_value
+
+      if @__env_return_value__.nil?
+        default_return_value
+      else
+        @__env_return_value__
+      end
     end
 
   private

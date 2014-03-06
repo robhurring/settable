@@ -74,6 +74,19 @@ describe Settable::Environment do
     c.key.should eq 'value'
   end
 
+  it 'should handle false correctly from env' do
+    c = Settable.configure do
+      use_environment EnvTester
+
+      set :something_enabled do
+        environment :test, false
+        true
+      end
+    end
+
+    c.something_enabled.should be_false
+  end
+
   it 'should default unless matched' do
     c = Settable.configure do
       use_environment EnvTester
